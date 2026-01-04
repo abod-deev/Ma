@@ -1,0 +1,5 @@
+{
+  "name": "Champions Tournament Draw",
+  "description": "A fully interactive, name-based knockout bracket generator with UEFA-style aesthetics, automatic progression, and dark mode design.",
+  "requestFramePermissions": []
+}
