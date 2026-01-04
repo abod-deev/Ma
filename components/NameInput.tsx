@@ -1,14 +1,19 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserPlus, Play, Users } from 'lucide-react';
 
 interface NameInputProps {
   onStart: (names: string[]) => void;
   isRtl: boolean;
+  initialText?: string;
 }
 
-export const NameInput: React.FC<NameInputProps> = ({ onStart, isRtl }) => {
-  const [text, setText] = useState('');
+export const NameInput: React.FC<NameInputProps> = ({ onStart, isRtl, initialText = '' }) => {
+  const [text, setText] = useState(initialText);
+
+  useEffect(() => {
+    if (initialText) setText(initialText);
+  }, [initialText]);
 
   const namesArray = text.split('\n').map(n => n.trim()).filter(n => n !== '');
   const count = namesArray.length;
@@ -22,41 +27,46 @@ export const NameInput: React.FC<NameInputProps> = ({ onStart, isRtl }) => {
   };
 
   return (
-    <div className={`max-w-md mx-auto mt-8 px-6 ${isRtl ? 'text-right' : 'text-left'}`}>
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-blue-500" />
-            <h2 className="text-xl font-bold text-white">
+    <div className={`max-w-md mx-auto mt-8 px-6 animate-in slide-in-from-bottom-10 duration-700 ${isRtl ? 'text-right' : 'text-left'}`}>
+      <div className="glass-panel border-white/10 rounded-2xl p-6 shadow-2xl overflow-hidden relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600/50 via-blue-400/50 to-blue-600/50" />
+        
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-600/10 p-2 rounded-lg border border-blue-500/20">
+              <UserPlus className="w-5 h-5 text-blue-400" />
+            </div>
+            <h2 className="text-xl font-black text-white tracking-tight">
               {isRtl ? 'إعداد القرعة' : 'Tournament Setup'}
             </h2>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-600/10 border border-blue-500/20 rounded-full text-blue-400 text-xs font-bold">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-600/10 border border-blue-500/20 rounded-full text-blue-400 text-[10px] font-black uppercase tracking-widest">
             <Users className="w-3 h-3" />
             <span>{count}</span>
           </div>
         </div>
         
-        <p className="text-gray-400 mb-4 text-xs">
+        <p className="text-slate-400 mb-4 text-[11px] font-medium leading-relaxed opacity-80">
           {isRtl 
-            ? 'أدخل الأسماء (اسم واحد في كل سطر).' 
-            : 'Enter names (one per line).'}
+            ? 'أدخل أسماء المتسابقين أو الفرق (اسم واحد في كل سطر).' 
+            : 'Enter participant or team names (one per line).'}
         </p>
 
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           dir={isRtl ? 'rtl' : 'ltr'}
-          placeholder={isRtl ? 'محمد\nأحمد\nخالد...' : 'Team Alpha\nTeam Beta...'}
-          className={`w-full h-48 bg-gray-950 border border-gray-800 rounded-xl p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${isRtl ? 'text-right' : 'text-left'}`}
+          placeholder={isRtl ? 'فريق الهلال\nفريق النصر\nفريق الاتحاد...' : 'Team Alpha\nTeam Beta\nTeam Gamma...'}
+          className={`w-full h-56 bg-black/40 border border-white/5 rounded-xl p-4 text-sm text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all ${isRtl ? 'text-right' : 'text-left'} font-medium resize-none`}
         />
 
         <button
           onClick={handleSubmit}
-          className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-lg shadow-blue-500/20"
+          className="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white text-[12px] font-black uppercase tracking-[0.2em] py-4 rounded-xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-xl shadow-blue-600/20 group overflow-hidden relative"
         >
-          <Play className="w-4 h-4" />
-          {isRtl ? 'ابدأ القرعة' : 'Start Draw'}
+          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+          <Play className="w-4 h-4 fill-current" />
+          <span>{isRtl ? 'ابدأ القرعة الآن' : 'Start Tournament'}</span>
         </button>
       </div>
     </div>

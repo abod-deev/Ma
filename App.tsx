@@ -1,10 +1,11 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Header } from './components/Header';
 import { NameInput } from './components/NameInput';
 import { TournamentBracket } from './components/TournamentBracket';
 import { Round, Participant, TournamentStatus, Match } from './types/tournament';
 import { generateTournament } from './utils/bracketLogic';
+import { Flame } from 'lucide-react';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<TournamentStatus>('setup');
@@ -13,12 +14,25 @@ const App: React.FC = () => {
   const [isRtl, setIsRtl] = useState(true);
   const [namesList, setNamesList] = useState<string[]>([]);
 
-  const handleStartDraw = (names: string[]) => {
-    setNamesList(names);
-    const data = generateTournament(names);
-    setRounds(data.rounds);
-    setThirdPlaceMatch(data.thirdPlaceMatch);
-    setStatus('active');
+  const calculateMatchWinner = (match: Match, isSingleLeg: boolean): Participant | null => {
+    if (!match.p1 || !match.p2) return null;
+    const s1_1 = parseInt(match.score1);
+    const s2_1 = parseInt(match.score2);
+    if (isSingleLeg) {
+      if (isNaN(s1_1) || isNaN(s2_1)) return null;
+      if (s1_1 > s2_1) return match.p1;
+      if (s2_1 > s1_1) return match.p2;
+      return null; 
+    } else {
+      const s1_2 = parseInt(match.score1_2) || 0;
+      const s2_2 = parseInt(match.score2_2) || 0;
+      const total1 = (isNaN(s1_1) ? 0 : s1_1) + s1_2;
+      const total2 = (isNaN(s2_1) ? 0 : s2_1) + s2_2;
+      if (match.score1 === '' && match.score2 === '' && match.score1_2 === '' && match.score2_2 === '') return null;
+      if (total1 > total2) return match.p1;
+      if (total2 > total1) return match.p2;
+      return null;
+    }
   };
 
   const handleSelectWinner = useCallback((matchId: string, winner: Participant | null) => {
@@ -44,193 +58,153 @@ const App: React.FC = () => {
       if (currentRoundIdx === -1) return prevRounds;
 
       const match = nextRounds[currentRoundIdx].matches[currentMatchIdx];
-      const oldWinnerId = match.winner?.id;
+      const previousWinnerId = match.winner?.id;
       match.winner = winner;
 
-      // Handle Third Place progression (from Semi-Finals)
       const isSemiFinal = currentRoundIdx === nextRounds.length - 2;
       if (isSemiFinal) {
         const loser = (winner && match.p1?.id === winner.id) ? match.p2 : match.p1;
-        if (loser) {
-          setThirdPlaceMatch(prev => {
-            if (!prev) return null;
-            const updated = { ...prev };
-            if (currentMatchIdx === 0) updated.p1 = loser;
-            else updated.p2 = loser;
-            return updated;
-          });
-        }
+        setThirdPlaceMatch(prev => {
+          if (!prev) return null;
+          const updated = { ...prev };
+          if (currentMatchIdx === 0) updated.p1 = loser;
+          else updated.p2 = loser;
+          if (previousWinnerId !== winner?.id) {
+            updated.winner = null;
+            updated.score1 = ''; updated.score2 = '';
+          }
+          return updated;
+        });
       }
 
-      // Propagate winner to next match
       let r = currentRoundIdx;
       let mId = match.id;
-      let nextWinner: Participant | null = winner;
+      let currentWinner: Participant | null = winner;
 
       while (r < nextRounds.length - 1) {
-        const currentMatch = nextRounds[r].matches.find(m => m.id === mId);
-        if (!currentMatch || !currentMatch.nextMatchId) break;
-
+        const currMatch = nextRounds[r].matches.find(m => m.id === mId);
+        if (!currMatch || !currMatch.nextMatchId) break;
         const nextRound = nextRounds[r + 1];
-        const nextMatch = nextRound.matches.find(m => m.id === currentMatch.nextMatchId);
-        
+        const nextMatch = nextRound.matches.find(m => m.id === currMatch.nextMatchId);
         if (nextMatch) {
-          const slot = currentMatch.nextMatchSlot;
+          const slot = currMatch.nextMatchSlot;
           const oldParticipantInSlot = slot === 1 ? nextMatch.p1 : nextMatch.p2;
-          
-          if (slot === 1) nextMatch.p1 = nextWinner;
-          else nextMatch.p2 = nextWinner;
-
-          // If the participant in that slot changed, reset the winner of all subsequent matches
-          if (oldParticipantInSlot?.id !== nextWinner?.id) {
+          if (slot === 1) nextMatch.p1 = currentWinner;
+          else nextMatch.p2 = currentWinner;
+          if (oldParticipantInSlot?.id !== currentWinner?.id) {
             nextMatch.winner = null;
-            nextMatch.score1 = '';
-            nextMatch.score2 = '';
-            nextMatch.score1_2 = '';
-            nextMatch.score2_2 = '';
-            nextWinner = null; 
+            nextMatch.score1 = ''; nextMatch.score2 = '';
+            nextMatch.score1_2 = ''; nextMatch.score2_2 = '';
+            currentWinner = null; 
             mId = nextMatch.id;
             r++;
-          } else {
-            break;
-          }
-        } else {
-          break;
-        }
+          } else break;
+        } else break;
       }
-
       return nextRounds;
     });
   }, []);
 
   const handleUpdateScore = (matchId: string, slot: 1 | 2, score: string, leg: 1 | 2 = 1) => {
-    let updatedMatch: Match | null = null;
-
     if (matchId === 'third-place') {
       setThirdPlaceMatch(prev => {
         if (!prev) return null;
         const updated = { ...prev };
-        if (leg === 1) {
-          if (slot === 1) updated.score1 = score;
-          else updated.score2 = score;
-        } else {
-          if (slot === 1) updated.score1_2 = score;
-          else updated.score2_2 = score;
-        }
-        updatedMatch = updated;
+        if (leg === 1) slot === 1 ? updated.score1 = score : updated.score2 = score;
+        else slot === 1 ? updated.score1_2 = score : updated.score2_2 = score;
+        const winner = calculateMatchWinner(updated, true);
+        if (updated.winner?.id !== winner?.id) updated.winner = winner;
         return updated;
       });
     } else {
       setRounds(prevRounds => {
-        const nextRounds = [...prevRounds];
-        for (const round of nextRounds) {
-          const match = round.matches.find(m => m.id === matchId);
+        const nextRounds: Round[] = JSON.parse(JSON.stringify(prevRounds));
+        let updatedMatch: Match | null = null;
+        let isFinalMatch = false;
+        for (let r = 0; r < nextRounds.length; r++) {
+          const match = nextRounds[r].matches.find(m => m.id === matchId);
           if (match) {
-            if (leg === 1) {
-              if (slot === 1) match.score1 = score;
-              else match.score2 = score;
-            } else {
-              if (slot === 1) match.score1_2 = score;
-              else match.score2_2 = score;
-            }
-            updatedMatch = JSON.parse(JSON.stringify(match));
+            if (leg === 1) slot === 1 ? match.score1 = score : match.score2 = score;
+            else slot === 1 ? match.score1_2 = score : match.score2_2 = score;
+            updatedMatch = match;
+            isFinalMatch = r === nextRounds.length - 1;
             break;
           }
+        }
+        if (updatedMatch) {
+          const winner = calculateMatchWinner(updatedMatch, isFinalMatch);
+          if (updatedMatch.winner?.id !== winner?.id) setTimeout(() => handleSelectWinner(matchId, winner), 0);
         }
         return nextRounds;
       });
     }
-
-    // Auto-winner logic after state update
-    // Note: Since state updates are async, we use a timeout or wait for the next render
-    // But we can compute it from the 'updatedMatch' we just captured
-    setTimeout(() => {
-      if (!updatedMatch || !updatedMatch.p1 || !updatedMatch.p2) return;
-      
-      const isSingleLeg = matchId === 'third-place' || (rounds.length > 0 && updatedMatch.roundIndex === rounds.length - 1);
-      
-      let winner: Participant | null = null;
-      if (isSingleLeg) {
-        const s1 = parseInt(updatedMatch.score1);
-        const s2 = parseInt(updatedMatch.score2);
-        if (!isNaN(s1) && !isNaN(s2)) {
-          if (s1 > s2) winner = updatedMatch.p1;
-          else if (s2 > s1) winner = updatedMatch.p2;
-        }
-      } else {
-        const t1 = (parseInt(updatedMatch.score1) || 0) + (parseInt(updatedMatch.score1_2) || 0);
-        const t2 = (parseInt(updatedMatch.score2) || 0) + (parseInt(updatedMatch.score2_2) || 0);
-        
-        // We only decide if scores are actually entered (not both 0 by default)
-        const anyScoreEntered = updatedMatch.score1 !== '' || updatedMatch.score2 !== '' || updatedMatch.score1_2 !== '' || updatedMatch.score2_2 !== '';
-        
-        if (anyScoreEntered) {
-          if (t1 > t2) winner = updatedMatch.p1;
-          else if (t2 > t1) winner = updatedMatch.p2;
-        }
-      }
-
-      if (winner !== null || updatedMatch.winner !== null) {
-        handleSelectWinner(matchId, winner);
-      }
-    }, 0);
   };
+
+  const handleStartDraw = useCallback((names: string[]) => {
+    setNamesList(names);
+    const { rounds: newRounds, thirdPlaceMatch: newThirdPlace } = generateTournament(names);
+    setRounds(newRounds);
+    setThirdPlaceMatch(newThirdPlace);
+    setStatus('active');
+  }, []);
+
+  const handleRedraw = useCallback(() => {
+    if (confirm(isRtl ? 'هل تريد إعادة القرعة بنفس الأسماء؟' : 'Redraw with same names?')) {
+      handleStartDraw(namesList);
+    }
+  }, [isRtl, namesList, handleStartDraw]);
 
   const handleReset = () => {
     if (status === 'setup') return;
-    if (confirm(isRtl ? 'هل أنت متأكد من العودة لشاشة الإدخال؟' : 'Are you sure you want to return to setup?')) {
+    if (confirm(isRtl ? 'هل أنت متأكد من العودة لتعديل الأسماء؟' : 'Return to edit names?')) {
       setStatus('setup');
       setRounds([]);
       setThirdPlaceMatch(null);
     }
   };
 
-  const handleRedraw = () => {
-    if (confirm(isRtl ? 'إعادة القرعة بعشوائية جديدة؟' : 'Redraw with new random seeds?')) {
-      handleStartDraw(namesList);
-    }
-  };
-
   return (
-    <div className={`min-h-screen flex flex-col bg-[#020617] text-slate-100 ${isRtl ? 'rtl' : 'ltr'}`}>
+    <div className={`min-h-screen flex flex-col ${isRtl ? 'rtl' : 'ltr'}`}>
       <Header 
         isRtl={isRtl} 
         onToggleRtl={() => setIsRtl(!isRtl)} 
         onReset={handleReset} 
         onRedraw={handleRedraw}
-        showRedraw={status === 'active'}
+        showActions={status === 'active'} 
       />
 
-      <main className="flex-grow">
+      <main className="flex-grow pb-16">
         {status === 'setup' ? (
-          <div className="container mx-auto px-4 py-12">
-            <div className="text-center mb-12 animate-in slide-in-from-top duration-700">
-              <h2 className="text-4xl md:text-6xl font-black mb-4 tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500 uppercase">
-                {isRtl ? 'قرعة الأبطال' : 'CHAMPIONS DRAW'}
+          <div className="container mx-auto px-4 py-20 max-w-4xl">
+            <div className="text-center mb-16 animate-in fade-in slide-in-from-top-10 duration-1000">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black tracking-widest uppercase mb-6">
+                <Flame className="w-3 h-3 fill-current" />
+                <span>Season 2024 Edition</span>
+              </div>
+              <h2 className="text-5xl md:text-8xl font-black mb-6 tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-slate-500 uppercase leading-none">
+                {isRtl ? 'قرعة الأبطال' : 'THE GRAND DRAW'}
               </h2>
-              <p className="text-slate-400 text-sm md:text-base max-w-lg mx-auto">
-                {isRtl 
-                  ? 'قم بإنشاء جدول بطولة احترافي في ثوانٍ. أدخل الأسماء وابدأ المنافسة.' 
-                  : 'Create a professional tournament bracket in seconds. Enter names and start the competition.'}
+              <p className="text-slate-400 text-sm md:text-lg max-w-xl mx-auto font-medium">
+                {isRtl ? 'أنشئ جدول بطولات احترافي بلمسة سينمائية.' : 'Create professional brackets with a cinematic touch.'}
               </p>
             </div>
-            <NameInput onStart={handleStartDraw} isRtl={isRtl} />
+            <NameInput onStart={handleStartDraw} isRtl={isRtl} initialText={namesList.join('\n')} />
           </div>
         ) : (
-          <div className="flex flex-col h-full animate-in fade-in zoom-in-95 duration-500">
-             <TournamentBracket 
-                rounds={rounds} 
-                thirdPlaceMatch={thirdPlaceMatch}
-                onSelectWinner={handleSelectWinner} 
-                onUpdateScore={handleUpdateScore}
-                isRtl={isRtl}
-             />
+          <div className="flex flex-col h-full animate-in fade-in duration-700">
+             <div className="flex-grow py-8 overflow-hidden">
+                <TournamentBracket rounds={rounds} thirdPlaceMatch={thirdPlaceMatch} onSelectWinner={handleSelectWinner} onUpdateScore={handleUpdateScore} isRtl={isRtl} />
+             </div>
           </div>
         )}
       </main>
 
-      <footer className="py-8 border-t border-slate-900 text-center text-slate-600 text-[10px] uppercase tracking-[0.3em]">
-        <p>© {new Date().getFullYear()} CHAMPIONS DRAW ENGINE • PREMIUM EDITION</p>
+      <footer className="py-10 border-t border-white/5 text-center text-slate-600 text-[10px] font-bold uppercase tracking-[0.4em]">
+        <p className="flex items-center justify-center gap-2">
+          <span>{new Date().getFullYear()} Champions Draw Engine</span>
+          <span className="w-1 h-1 rounded-full bg-blue-500" />
+          <span className="text-slate-700">UI/UX v2.5</span>
+        </p>
       </footer>
     </div>
   );
