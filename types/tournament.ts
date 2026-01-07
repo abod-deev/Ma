@@ -24,9 +24,17 @@ export interface Round {
   matches: Match[];
 }
 
-export type TournamentStatus = 'setup' | 'active' | 'finished';
+export type TournamentStatus = 'setup' | 'active' | 'archive' | 'finished';
 
 export interface TournamentData {
   rounds: Round[];
   thirdPlaceMatch: Match | null;
+}
+
+export interface SavedTournament {
+  id: string;
+  name: string;
+  createdAt: string;
+  data: TournamentData;
+  participants: string[];
 }

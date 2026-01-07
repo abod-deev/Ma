@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Participant, Match } from '../types/tournament';
-import { Trophy, Medal, Crown, Target } from 'lucide-react';
+import { Trophy, Medal, Target } from 'lucide-react';
 
 interface MatchCardProps {
   match: Match;
@@ -19,22 +19,55 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, onSelectWinner, onU
   const calculateTotal = (s1: string, s2: string) => (parseInt(s1) || 0) + (parseInt(s2) || 0);
 
   const renderBadge = (player: Participant | null) => {
-    if (!winner || !player || winner.id !== player.id) return null;
+    if (!player) return null;
 
-    if (isFinal) return (
-      <div className="flex items-center gap-1 bg-yellow-500/20 px-1.5 py-0.5 rounded border border-yellow-500/30 animate-pulse">
-        <Crown className="w-2.5 h-2.5 text-yellow-400 fill-current" />
-        <span className="text-[7px] font-black text-yellow-400 uppercase tracking-tighter">
-          {isRtl ? 'البطل' : '1ST'}
-        </span>
-      </div>
-    );
+    // 1. Handle Final Match (Gold & Silver)
+    if (isFinal && winner) {
+      if (winner.id === player.id) {
+        // Gold / 1st
+        return (
+          <div className="flex items-center gap-0.5 bg-yellow-500/20 px-1 py-0.5 rounded border border-yellow-500/30 animate-pulse">
+            <Trophy className="w-2 h-2 text-yellow-400 fill-current" />
+            <span className="text-[6px] font-black text-yellow-400 uppercase tracking-tighter">
+              {isRtl ? 'البطل' : '1ST'}
+            </span>
+          </div>
+        );
+      } else if (match.p1 && match.p2) {
+        // Silver / 2nd (The one who didn't win)
+        return (
+          <div className="flex items-center gap-0.5 bg-slate-400/20 px-1 py-0.5 rounded border border-slate-400/30">
+            <Medal className="w-2 h-2 text-slate-300" />
+            <span className="text-[6px] font-black text-slate-300 uppercase tracking-tighter">
+              {isRtl ? 'الوصيف' : '2ND'}
+            </span>
+          </div>
+        );
+      }
+    }
 
-    return (
-      <div className="bg-blue-500/20 px-1 rounded border border-blue-500/30">
-        <span className="text-[6px] font-black text-blue-400 uppercase">WIN</span>
-      </div>
-    );
+    // 2. Handle Third Place Match (Bronze)
+    if (isThirdPlace && winner && winner.id === player.id) {
+      return (
+        <div className="flex items-center gap-0.5 bg-orange-700/20 px-1 py-0.5 rounded border border-orange-500/30">
+          <Medal className="w-2 h-2 text-orange-400" />
+          <span className="text-[6px] font-black text-orange-400 uppercase tracking-tighter">
+            {isRtl ? 'الثالث' : '3RD'}
+          </span>
+        </div>
+      );
+    }
+
+    // 3. Regular Round Winner
+    if (winner && winner.id === player.id) {
+      return (
+        <div className="bg-blue-500/20 px-1 rounded border border-blue-500/30">
+          <span className="text-[5px] font-black text-blue-400 uppercase">WIN</span>
+        </div>
+      );
+    }
+
+    return null;
   };
 
   const renderPlayerRow = (player: Participant | null, slot: 1 | 2, leg1: string, leg2: string) => {
@@ -44,7 +77,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, onSelectWinner, onU
 
     return (
       <div className={`
-        group relative flex items-center gap-2 px-3 py-2 transition-all duration-300
+        group relative flex items-center gap-1.5 px-2 py-1.5 transition-all duration-300
         ${slot === 1 ? 'border-b border-white/5' : ''}
         ${isWinner ? (isFinal ? 'bg-yellow-500/5' : 'bg-blue-500/5') : 'hover:bg-white/5'}
         ${isRtl ? 'flex-row-reverse' : 'flex-row'}
@@ -56,12 +89,12 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, onSelectWinner, onU
           ${isWinner ? (isFinal ? 'bg-yellow-400' : 'bg-blue-500') : 'bg-transparent'}
         `} />
 
-        <div className={`flex flex-1 items-center gap-2 overflow-hidden ${isRtl ? 'flex-row-reverse' : ''}`}>
+        <div className={`flex flex-1 items-center gap-1.5 overflow-hidden ${isRtl ? 'flex-row-reverse' : ''}`}>
           <div className={`
             flex-1 min-w-0 font-bold tracking-tight transition-colors truncate
-            ${isFinal ? 'text-[11px] md:text-xs' : 'text-[10px] md:text-[11px]'}
+            ${isFinal ? 'text-[10px] md:text-[11px]' : 'text-[9px] md:text-[10px]'}
             ${isWinner ? (isFinal ? 'text-yellow-400' : 'text-blue-300') : 'text-slate-300'}
-            ${isLoser ? 'opacity-40 line-through grayscale' : ''}
+            ${isLoser && !isFinal ? 'opacity-40 line-through grayscale' : ''} 
             ${!player ? 'text-slate-600 italic font-normal' : ''}
           `}>
             {player ? player.name : (isRtl ? 'بانتظار التأهل' : 'Waiting...')}
@@ -69,7 +102,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, onSelectWinner, onU
           {renderBadge(player)}
         </div>
 
-        <div className={`flex gap-1 items-center ${isRtl ? 'flex-row-reverse' : ''}`}>
+        <div className={`flex gap-0.5 items-center ${isRtl ? 'flex-row-reverse' : ''}`}>
           <input
             type="text"
             inputMode="numeric"
@@ -77,9 +110,9 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, onSelectWinner, onU
             disabled={!player}
             onChange={(e) => onUpdateScore(match.id, slot, e.target.value, 1)}
             className={`
-              w-6 h-6 rounded border bg-slate-950/50 text-center text-[10px] font-black transition-all
+              w-5 h-5 md:w-6 md:h-6 rounded border bg-slate-950/50 text-center text-[9px] md:text-[10px] font-black transition-all
               ${isWinner ? (isFinal ? 'border-yellow-500/50 text-yellow-400' : 'border-blue-500/50 text-blue-400') : 'border-white/10 text-slate-500'}
-              focus:ring-1 focus:ring-blue-500 outline-none
+              focus:ring-1 focus:ring-blue-500 outline-none p-0
             `}
             placeholder="0"
           />
@@ -90,7 +123,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, onSelectWinner, onU
               value={leg2}
               disabled={!player}
               onChange={(e) => onUpdateScore(match.id, slot, e.target.value, 2)}
-              className="w-5 h-5 rounded border border-white/5 bg-slate-900/50 text-center text-[9px] font-bold text-slate-500 outline-none"
+              className="w-4 h-4 md:w-5 md:h-5 rounded border border-white/5 bg-slate-900/50 text-center text-[8px] md:text-[9px] font-bold text-slate-500 outline-none p-0"
               placeholder="0"
             />
           )}
@@ -102,25 +135,25 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, onSelectWinner, onU
   return (
     <div className={`
       relative group transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]
-      ${isFinal ? 'w-40 md:w-56' : 'w-36 md:w-48'}
+      ${isFinal ? 'w-36 md:w-52' : 'w-32 md:w-44'}
     `}>
       <div className={`
-        glass-panel rounded-xl overflow-hidden border transition-all duration-500
+        glass-panel rounded-lg overflow-hidden border transition-all duration-500
         ${isFinal ? 'border-yellow-500/40 gold-glow' : 'border-slate-800/60 shadow-lg'}
       `}>
         <div className={`
-          px-3 py-1.5 flex items-center justify-between border-b border-white/5 bg-black/20
+          px-2.5 py-1 flex items-center justify-between border-b border-white/5 bg-black/20
           ${isRtl ? 'flex-row-reverse' : ''}
         `}>
-          <div className="flex items-center gap-1.5">
-            <Target className={`w-3 h-3 ${isFinal ? 'text-yellow-500' : 'text-slate-500'}`} />
-            <span className={`text-[8px] font-extrabold uppercase tracking-widest ${isFinal ? 'text-yellow-500' : 'text-slate-500'}`}>
-              {isFinal ? (isRtl ? 'المواجهة النهائية' : 'THE FINAL') : 
-               isThirdPlace ? (isRtl ? 'المركز الثالث' : 'BRONZE FINAL') :
-               (isRtl ? `مباراة ${match.matchIndex + 1}` : `MATCH ${match.matchIndex + 1}`)}
+          <div className="flex items-center gap-1">
+            <Target className={`w-2.5 h-2.5 ${isFinal ? 'text-yellow-500' : 'text-slate-500'}`} />
+            <span className={`text-[7px] font-extrabold uppercase tracking-widest ${isFinal ? 'text-yellow-500' : 'text-slate-500'}`}>
+              {isFinal ? (isRtl ? 'النهائي' : 'THE FINAL') : 
+               isThirdPlace ? (isRtl ? 'المركز الثالث' : 'BRONZE') :
+               (isRtl ? `مباراة ${match.matchIndex + 1}` : `M ${match.matchIndex + 1}`)}
             </span>
           </div>
-          {isFinal && <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />}
+          {isFinal && <div className="w-1 h-1 rounded-full bg-yellow-500 animate-pulse" />}
         </div>
         
         <div className="flex flex-col">
