@@ -25,12 +25,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Setup Git identity
-        run: |
-          git config --global user.name "abod-deev"
-          git config --global user.email "abod-deev@gmil.com"
-
       - name: Deploy to GitHub Pages
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx gh-pages -d dist
