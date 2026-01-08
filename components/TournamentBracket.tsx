@@ -29,7 +29,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({ rounds, th
               {/* Round Title */}
               <div className="relative mb-6 md:mb-8 group z-10">
                 <div className="px-3 py-1 glass-panel rounded-full border border-blue-500/20 group-hover:border-blue-500/40 transition-colors">
-                  <h3 className="text-[8px] md:text-[9px] font-black text-blue-400 uppercase tracking-[0.2em] whitespace-nowrap">
+                  <h3 className="text-[8px] md:text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em] whitespace-nowrap">
                     {round.name === 'Final' && isRtl ? 'النهائي الكبير' : 
                      round.name === 'Semi-Final' && isRtl ? 'نصف النهائي' : 
                      round.name === 'Quarter-Final' && isRtl ? 'ربع النهائي' : round.name}
@@ -37,9 +37,9 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({ rounds, th
                 </div>
                 {/* Decorative dots */}
                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
-                  <div className="w-0.5 h-0.5 rounded-full bg-blue-500/20" />
-                  <div className="w-0.5 h-0.5 rounded-full bg-blue-500/40" />
-                  <div className="w-0.5 h-0.5 rounded-full bg-blue-500/20" />
+                  <div className="w-0.5 h-0.5 rounded-full bg-blue-400 dark:bg-blue-500/20" />
+                  <div className="w-0.5 h-0.5 rounded-full bg-blue-600 dark:bg-blue-500/40" />
+                  <div className="w-0.5 h-0.5 rounded-full bg-blue-400 dark:bg-blue-500/20" />
                 </div>
               </div>
               
@@ -65,6 +65,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({ rounds, th
                           onUpdateScore={onUpdateScore}
                           isRtl={isRtl} 
                           isFinal={isLastRound}
+                          totalMatches={round.matches.length}
                         />
                         
                         {!isLastRound && (
@@ -85,11 +86,11 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({ rounds, th
                                   : `M 0 ${startY} L 50 ${startY} L 50 ${endY} L 100 ${endY}`
                                 }
                                 fill="none"
-                                stroke={match.winner ? `url(#grad-${match.id})` : "#1e293b"}
+                                stroke={match.winner ? `url(#grad-${match.id})` : "currentColor"}
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                className="transition-all duration-700"
+                                className="transition-all duration-700 text-slate-300 dark:text-slate-800"
                               />
                             </svg>
                           </div>
@@ -102,7 +103,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({ rounds, th
                   {isLastRound && thirdPlaceMatch && (
                     <div className="flex flex-col items-center animate-in fade-in slide-in-from-bottom duration-1000">
                        <div className="mb-3 px-3 py-1 glass-panel rounded-full border border-orange-500/20">
-                          <h3 className="text-[8px] md:text-[9px] font-black text-orange-400 uppercase tracking-[0.2em] whitespace-nowrap">
+                          <h3 className="text-[8px] md:text-[9px] font-black text-orange-500 dark:text-orange-400 uppercase tracking-[0.2em] whitespace-nowrap">
                             {isRtl ? 'المركز الثالث' : 'Bronze'}
                           </h3>
                         </div>
@@ -112,6 +113,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({ rounds, th
                           onUpdateScore={onUpdateScore}
                           isRtl={isRtl}
                           isThirdPlace={true}
+                          totalMatches={1}
                         />
                     </div>
                   )}

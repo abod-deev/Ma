@@ -7,28 +7,50 @@
     <meta name="theme-color" content="#020617">
     <title>Champions Draw • Tournament Bracket</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            color-scheme: dark;
+            color-scheme: light dark;
         }
         html, body {
             height: 100%;
             min-height: 100vh;
-            background-color: #020617 !important;
             margin: 0;
             padding: 0;
+            transition: background-color 0.5s ease, color 0.5s ease;
         }
+        
+        /* Light Mode Default */
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            color: #f8fafc;
-            overflow-x: hidden;
+            background-color: #f1f5f9; /* Slate 100 */
+            color: #0f172a; /* Slate 900 */
             background-image: 
-                radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(30, 58, 138, 0.05) 0px, transparent 50%);
             background-attachment: fixed;
             background-repeat: no-repeat;
             background-size: cover;
+        }
+
+        /* Dark Mode Override */
+        html.dark body {
+            background-color: #020617 !important;
+            color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
         }
         
         /* Custom scrollbar */
@@ -48,8 +70,16 @@
         }
         
         .glass-panel {
-            background: rgba(15, 23, 42, 0.6);
+            /* Light mode glass */
+            background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        html.dark .glass-panel {
+            /* Dark mode glass */
+            background: rgba(15, 23, 42, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
@@ -85,19 +115,17 @@
 <script type="importmap">
 {
   "imports": {
-    "html2canvas": "https://esm.sh/html2canvas@^1.4.1",
-    "canvas-confetti": "https://esm.sh/canvas-confetti@^1.9.2",
-    "lucide-react": "https://esm.sh/lucide-react@^0.475.0",
-    "react/": "https://esm.sh/react@^19.0.0/",
-    "react": "https://esm.sh/react@^19.0.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.0.0/"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "canvas-confetti": "https://esm.sh/canvas-confetti@^1.9.4",
+    "html2canvas": "https://esm.sh/html2canvas@^1.4.1"
   }
 }
 </script>
 </head>
-<body class="bg-slate-950 text-slate-50">
+<body class="transition-colors duration-500">
     <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
 </body>
 </html>
-    
