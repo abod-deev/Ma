@@ -4,6 +4,7 @@ import { Header } from './components/Header';
 import { NameInput } from './components/NameInput';
 import { TournamentBracket } from './components/TournamentBracket';
 import { WinnerModal } from './components/WinnerModal';
+import { DrawAnimation } from './components/DrawAnimation';
 import { Round, Participant, TournamentStatus, Match, SavedTournament } from './types/tournament';
 import { generateTournament } from './utils/bracketLogic';
 import { Flame, Trophy, Trash2, ExternalLink, Calendar, Users } from 'lucide-react';
@@ -349,10 +350,12 @@ const App: React.FC = () => {
     handleTournamentUpdate(matchId, { scoreUpdate: { slot, val: score, leg } });
   };
 
+  // Called when user clicks "Start Tournament" in the NameInput
   const handleStartDraw = useCallback((names: string[]) => {
     setNamesList(names);
     const { rounds: newRounds, thirdPlaceMatch: newThirdPlace } = generateTournament(names);
     
+    // Create Saved Object immediately but don't show bracket yet
     const maxId = savedTournaments.reduce((max, t) => {
       const num = parseInt(t.id, 10);
       return (!isNaN(num) && num > max) ? num : max;
@@ -380,8 +383,14 @@ const App: React.FC = () => {
     setCurrentTournamentId(newTournament.id);
     setRounds(newRounds);
     setThirdPlaceMatch(newThirdPlace);
-    setStatus('active');
+    
+    // Go to Animation State
+    setStatus('drawing');
   }, [savedTournaments, isRtl]);
+
+  const handleDrawAnimationComplete = () => {
+    setStatus('active');
+  };
 
   const handleRedraw = useCallback(() => {
     if (confirm(isRtl ? 'هل تريد إعادة القرعة بنفس الأسماء؟ (سيتم إنشاء قرعة جديدة)' : 'Redraw with same names? (Creates new tournament)')) {
@@ -479,6 +488,16 @@ const App: React.FC = () => {
         showActions={status === 'active'}
         status={status}
       />
+
+      {status === 'drawing' && rounds.length > 0 && (
+          <DrawAnimation 
+            matches={rounds[0].matches}
+            allParticipants={namesList}
+            onComplete={handleDrawAnimationComplete}
+            onRedraw={handleRedraw}
+            isRtl={isRtl}
+          />
+      )}
 
       <main className="flex-grow flex flex-col justify-center pb-4 md:pb-16 relative">
         {showWinnerModal && tournamentResults.winner && (

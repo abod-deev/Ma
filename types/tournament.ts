@@ -24,7 +24,7 @@ export interface Round {
   matches: Match[];
 }
 
-export type TournamentStatus = 'setup' | 'active' | 'archive' | 'finished';
+export type TournamentStatus = 'setup' | 'drawing' | 'active' | 'archive' | 'finished';
 
 export interface TournamentData {
   rounds: Round[];
