@@ -22,7 +22,7 @@ const App: React.FC = () => {
   const [namesList, setNamesList] = useState<string[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
-  // Results State
+  // Results State 
   const [showWinnerModal, setShowWinnerModal] = useState(false);
   const [tournamentResults, setTournamentResults] = useState<{
     winner: Participant | null;
